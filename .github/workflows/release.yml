@@ -52,7 +52,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            swapctl-amd/swapctl-linux-amd64
+            swapctl-amd64/swapctl-linux-amd64
             swapctl-arm64/swapctl-linux-arm64
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
