@@ -37,14 +37,44 @@ When you run the tool:
 * Linux OS (Ubuntu, Debian, CentOS, etc.)
 * Root/Sudo privileges.
 
-### Variables
 
-| Workload / Service | `vm.swappiness` | `vm.vfs_cache_pressure` | `vm.overcommit_memory` | Technical Justification |
-| :--- | :---: | :---: | :---: | :--- |
-| **Redis / In-Memory** | `0` or `1` | `100` (Default) | `1` (Always) | **Swappiness**: Redis latency spikes severely if swapped. Docs recommend turning off swap entirely or setting to 0/1.<br>**Overcommit**: MUST be set to 1. Redis uses background saving (BGSAVE) via process forking. Setting to 1 prevents the OS from blocking the fork, avoiding fatal Out-Of-Memory errors. |
-| **SQL Databases (MySQL, PostgreSQL)** | `1` to `10` | `50` | `0` or `2` | **Swappiness**: Prevents the OS from paging out the database's internal Buffer Pool/Shared Buffers to disk.<br>**Cache Pressure**: Lowering to 50 retains inode/dentry caches in RAM longer, significantly accelerating disk I/O metadata lookups.<br>**Overcommit**: Setting to 2 (Strict) restricts over-allocation, protecting the DB from being terminated by the Linux OOM Killer. |
-| **General Web Servers (Nginx, Apache)**| `60` (Default) | `100` (Default) | `0` (Default) | Relies on default Linux kernel heuristics, providing an efficient, balanced distribution of memory between active web processes and idle connections. |
-| **High Traffic Storage / CDN / NAS** | `10` | `200` to `1000` | `0` (Default) | **Swappiness**: Keeps core OS and networking processes in RAM.<br>**Cache Pressure**: Aggressively evicts metadata (directories/inodes) to clear RAM instantly, prioritizing the massive caching of actual file contents (Page Cache) to serve users faster. |
+### Workload Tuning Recommendations
+
+| Workload / Service | `vm.swappiness` | `vm.vfs_cache_pressure` | `vm.overcommit_memory` |
+| :--- | :---: | :---: | :---: |
+| **Redis / In-Memory** | `1` | `100` | `1` |
+| **SQL Databases** | `10` | `50` | `0` |
+| **Web Servers** | `60` | `100` | `0` |
+| **High I/O Storage**| `10` | `100` | `0` |
+
+---
+
+### Understanding Kernel Parameters
+
+#### 1. `vm.swappiness` (0 - 100)
+Controls how aggressively the Linux kernel moves memory pages from RAM to the swap space.
+*   **Low Value (1-10):** Instructs the kernel to avoid swapping as much as possible. It keeps application data in RAM until memory is critically low. Best for databases to prevent disk I/O latency.
+*   **High Value (60-100):** The kernel will swap idle processes out of RAM more frequently to free up space for file system caching. Good for general-purpose desktop or balanced web servers.
+
+#### 2. `vm.vfs_cache_pressure` (0 - 100+)
+Controls the tendency of the kernel to reclaim the memory which is used for caching directory and inode objects (metadata about where files are on the disk).
+*   **Low Value (e.g., 50):** The kernel retains metadata in RAM longer. This consumes more memory but significantly speeds up file lookups and disk queries. Highly recommended for SQL databases.
+*   **High Value (>100):** The kernel aggressively drops metadata from RAM. This frees up memory quickly but slows down file system operations. (Default is 100).
+
+#### 3. `vm.overcommit_memory` (0, 1, or 2)
+Defines how the kernel handles large memory allocation requests from applications.
+*   **0 (Heuristic - Default):** The kernel estimates if enough memory is available. If the request is absurdly large, it denies it.
+*   **1 (Always Overcommit):** The kernel pretends there is always enough memory and grants all requests. This is **mandatory for Redis** because it uses a background process (BGSAVE) that temporarily forks memory. Without this, Redis will crash with Out-Of-Memory errors.
+*   **2 (Strict):** The kernel strictly checks RAM + Swap limits and denies any request that exceeds them. Excellent for system stability but can cause strict applications to fail.
+
+---
+
+### Technical Justifications
+
+*   **Redis / In-Memory:** Swap latency destroys Redis performance, so `swappiness` is set to `1`. `overcommit_memory` MUST be `1` to allow background snapshot saving without crashing.
+*   **SQL Databases (MySQL/PostgreSQL):** Lowering `vfs_cache_pressure` to `50` ensures fast disk metadata lookups. `swappiness` at `10` prevents the database's internal memory buffers from being paged to the slower disk.
+*   **Web Servers (Nginx/Apache):** The default values (`60`, `100`, `0`) provide the best balance between serving active connections and keeping the server responsive.
+*   **High I/O Storage:** A low `swappiness` (`10`) ensures core networking processes stay in RAM, preventing transfer drops, while keeping other values at standard defaults to manage large file blocks efficiently.
 
 ### License
 Open Source - MIT. Created by [Taha Samy](https://github.com/taha2samy-3).
