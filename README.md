@@ -9,12 +9,12 @@ Run the command for your system architecture:
 **For AMD64 (Most VPS and Servers):**
 
 ```bash
-curl -L https://github.com/taha2samy-3/swapctl/releases/download/v1.1.0/swapctl-linux-amd64 -o swapctl && chmod +x swapctl && sudo ./swapctl
+curl -L https://github.com/taha2samy-3/swapctl/releases/download/v1.1.1/swapctl-linux-amd64 -o swapctl && chmod +x swapctl && sudo ./swapctl
 ```
 
 **For ARM64 (Raspberry Pi, AWS Graviton):**
 ```bash
-curl -L https://github.com/taha2samy-3/swapctl/releases/download/v1.1.0/swapctl-linux-arm64 -o swapctl && chmod +x swapctl && sudo ./swapctl
+curl -L https://github.com/taha2samy-3/swapctl/releases/download/v1.1.1/swapctl-linux-arm64 -o swapctl && chmod +x swapctl && sudo ./swapctl
 ```
 
 ---
