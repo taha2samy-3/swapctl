@@ -7,4 +7,6 @@ var (
 	DefaultSwap    = "/swapfile"
 	SwappinessPath = "/proc/sys/vm/swappiness"
 	CachePressure  = "/proc/sys/vm/vfs_cache_pressure"
+	OvercommitPath = "/proc/sys/vm/overcommit_memory" 
+
 )
